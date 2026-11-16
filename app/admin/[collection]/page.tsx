@@ -232,7 +232,7 @@ export default async function AdminCollectionPage({
                   <fieldset className="admin-form-section">
                     <legend><span className="admin-form-step">3</span> Images</legend>
                     <label>Logo<input name="imageFile" type="file" accept="image/jpeg,image/png,image/webp" /></label>
-                    <small className="field-hint">JPEG, PNG ou WebP, 5 Mo maximum.{editedImage ? " Le logo actuel sera conservé si vous n’en choisissez pas un autre." : ""}</small>
+                    <small className="field-hint">JPEG, PNG ou WebP, 4 Mo maximum.{editedImage ? " Le logo actuel sera conservé si vous n’en choisissez pas un autre." : ""}</small>
                     {itemToEdit && editedImage && <label className="image-remove-option"><input type="checkbox" name="removeImage" /> Supprimer le logo actuel</label>}
                     {previewImageField}
                   </fieldset>
@@ -265,7 +265,7 @@ export default async function AdminCollectionPage({
                   <fieldset className="admin-form-section">
                     <legend><span className="admin-form-step">{collection === "activites" ? "3" : "2"}</span> Images</legend>
                     <label>Image de couverture<input name="imageFile" type="file" accept="image/jpeg,image/png,image/webp" /></label>
-                    <small className="field-hint">JPEG, PNG ou WebP, 5 Mo maximum.{editedImage ? " L’image actuelle sera conservée si vous n’en choisissez pas une autre." : ""}</small>
+                    <small className="field-hint">JPEG, PNG ou WebP, 4 Mo maximum.{editedImage ? " L’image actuelle sera conservée si vous n’en choisissez pas une autre." : ""}</small>
                     {itemToEdit && editedImage && <label className="image-remove-option"><input type="checkbox" name="removeImage" /> Supprimer l’image actuelle</label>}
                   </fieldset>
                   <fieldset className="admin-form-section">

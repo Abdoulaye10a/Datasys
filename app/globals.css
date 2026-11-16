@@ -4839,6 +4839,7 @@ body {
 .gmail-settings-panel > summary { min-height: 44px; margin: 0; cursor: pointer; list-style: none; }
 .gmail-settings-panel > summary::-webkit-details-marker { display: none; }
 .gmail-settings-heading { display: flex; flex: 1; min-width: 0; flex-direction: column; gap: 5px; }
+.gmail-settings-panel > summary > .gmail-settings-heading { display: flex; flex-direction: column; align-items: flex-start; gap: 5px; }
 .gmail-settings-heading > strong { display: flex; align-items: center; gap: 8px; font-size: 15px; }
 .gmail-settings-heading > span { color: #657187; font-size: 12px; font-weight: 400; }
 .gmail-settings-chevron { flex: 0 0 auto; color: #657187; }
@@ -5244,3 +5245,5 @@ body {
 }
 
 /* Fin des styles publics. */
+
+/* Fin des styles de la messagerie */

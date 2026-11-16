@@ -10,7 +10,12 @@ if (!connectionString) {
   throw new Error("DATABASE_URL doit être défini pour accéder à PostgreSQL.");
 }
 
-const adapter = new PrismaPg({ connectionString });
+// En production serverless, plusieurs instances peuvent démarrer en parallèle :
+// limiter le pool évite de saturer les connexions PostgreSQL.
+const adapter = new PrismaPg({
+  connectionString,
+  max: process.env.VERCEL ? 5 : 10,
+});
 
 export const prisma =
   globalForPrisma.prisma ??

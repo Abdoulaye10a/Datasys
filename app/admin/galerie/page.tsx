@@ -41,7 +41,7 @@ export default async function GalleryAdminPage({
             <fieldset className="admin-form-section">
               <legend><span className="admin-form-step">1</span> Fichier</legend>
               <label>Fichier image<input type="file" name="file" accept="image/jpeg,image/png,image/webp" /></label>
-              <span className="field-hint">JPEG, PNG ou WebP · 5 Mo maximum.</span>
+              <span className="field-hint">JPEG, PNG ou WebP · 4 Mo maximum.</span>
               <label>Image d’aperçu (facultatif)<input type="file" name="previewImageFile" accept="image/jpeg,image/png,image/webp" /></label>
               <span className="field-hint">Visuel utilisé dans le grand panneau de la galerie. Sans aperçu, l’image de la galerie est affichée.</span>
               <label>Lien de l’image<input type="url" name="url" maxLength={2048} placeholder="https://..." /></label>
@@ -49,7 +49,7 @@ export default async function GalleryAdminPage({
             <fieldset className="admin-form-section">
               <legend><span className="admin-form-step">2</span> Description</legend>
               <label>Description de l’image<input name="altText" maxLength={240} placeholder="Décrivez l’image pour l’accessibilité." /></label>
-              <p className="field-hint">Les fichiers importés sont enregistrés dans le répertoire public/uploads. Utilisez uniquement des images que DATASYS est autorisé à publier.</p>
+              <p className="field-hint">Les fichiers importés sont conservés dans l’espace de stockage du site. Utilisez uniquement des images que DATASYS est autorisé à publier.</p>
             </fieldset>
             <div className="admin-form-sticky-actions">
               <button className="button button-primary" type="submit"><ImagePlus size={16} /> Ajouter à la galerie</button>

@@ -217,7 +217,7 @@ function SolutionForm({
             accept="image/jpeg,image/png,image/webp"
           />
         </label>
-        <small className="field-hint">JPEG, PNG ou WebP · 5 Mo maximum. Un fichier choisi remplacera le logo actuellement utilisé.</small>
+        <small className="field-hint">JPEG, PNG ou WebP · 4 Mo maximum. Un fichier choisi remplacera le logo actuellement utilisé.</small>
         {settings[fields.image] && (
           <img
             className="solution-image-current"
@@ -252,7 +252,7 @@ function SolutionForm({
           </>
         )}
         <small className="field-hint">
-          Remplace l’aperçu animé par une image JPEG, PNG ou WebP (5 Mo maximum).
+          Remplace l’aperçu animé par une image JPEG, PNG ou WebP (4 Mo maximum).
         </small>
       </fieldset>
       <label>

@@ -1,9 +1,6 @@
 "use server";
 
 import { compare, hash } from "bcryptjs";
-import { randomUUID } from "node:crypto";
-import { mkdir, unlink, writeFile } from "node:fs/promises";
-import { basename, join } from "node:path";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
@@ -24,6 +21,7 @@ import { prisma } from "@/lib/prisma";
 import { defaultSiteSettings } from "@/lib/site-info";
 import { siteLogoOptions } from "@/lib/site-logos";
 import { recordUserActivity } from "@/lib/user-activity";
+import { deleteStoredImage, isStoredImageUrl, storeImage } from "@/lib/media-storage";
 import { getAdminPath } from "@/lib/admin-paths";
 import {
   defaultButtonHref,
@@ -42,7 +40,7 @@ async function saveContentImage(value: FormDataEntryValue | null) {
 
   const extension = imageFileExtensions[value.type];
   if (!extension) throw new Error("Format non pris en charge. Utilisez JPEG, PNG ou WebP.");
-  if (value.size > 5 * 1024 * 1024) throw new Error("L’image ne doit pas dépasser 5 Mo.");
+  if (value.size > 4 * 1024 * 1024) throw new Error("L’image ne doit pas dépasser 4 Mo.");
 
   const buffer = Buffer.from(await value.arrayBuffer());
   const validSignature =
@@ -51,11 +49,7 @@ async function saveContentImage(value: FormDataEntryValue | null) {
     (value.type === "image/webp" && buffer.toString("ascii", 0, 4) === "RIFF" && buffer.toString("ascii", 8, 12) === "WEBP");
   if (!validSignature) throw new Error("Le fichier n’est pas une image valide de ce format.");
 
-  const filename = `${randomUUID()}.${extension}`;
-  const filePath = join(process.cwd(), "public", "uploads", filename);
-  await mkdir(join(process.cwd(), "public", "uploads"), { recursive: true });
-  await writeFile(filePath, buffer, { flag: "wx" });
-  return { filePath, url: `/uploads/${filename}` };
+  return storeImage(buffer, extension, value.type);
 }
 
 const siteImageSettingKeys = [
@@ -72,12 +66,7 @@ const siteImageSettingKeys = [
 ];
 
 async function removeUnusedContentImage(imageUrl: string | null | undefined) {
-  if (!imageUrl?.startsWith("/uploads/")) return;
-
-  const filename = basename(imageUrl);
-  if (filename !== imageUrl.slice("/uploads/".length) || !/^[A-Za-z0-9][A-Za-z0-9._-]*$/.test(filename)) {
-    return;
-  }
+  if (!imageUrl || !isStoredImageUrl(imageUrl)) return;
 
   try {
     const [mediaReference, settingReference] = await Promise.all([
@@ -89,9 +78,7 @@ async function removeUnusedContentImage(imageUrl: string | null | undefined) {
     ]);
     if (mediaReference || settingReference) return;
 
-    await unlink(join(process.cwd(), "public", "uploads", filename)).catch((error: NodeJS.ErrnoException) => {
-      if (error.code !== "ENOENT") throw error;
-    });
+    await deleteStoredImage(imageUrl);
   } catch (error) {
     console.error("Impossible de supprimer une image de contenu devenue inutilisée.", error);
   }
@@ -104,7 +91,7 @@ async function cleanupFailedContentImages(
   for (const upload of uploads) {
     if (!upload) continue;
     try {
-      await unlink(upload.filePath);
+      await upload.remove();
     } catch (cleanupError) {
       throw new AggregateError(
         [error, cleanupError],
@@ -1545,7 +1532,7 @@ export async function createMediaAction(formData: FormData) {
 
   const upload = formData.get("file");
   let url = parsed.data.url;
-  let uploadedFilePath: string | undefined;
+  let uploadedImage: Awaited<ReturnType<typeof storeImage>> | undefined;
   if (upload instanceof File && upload.size > 0) {
     const extensionByType: Record<string, string> = {
       "image/jpeg": "jpg",
@@ -1554,7 +1541,7 @@ export async function createMediaAction(formData: FormData) {
     };
     const extension = extensionByType[upload.type];
     if (!extension) throw new Error("Format non pris en charge. Utilisez JPEG, PNG ou WebP.");
-    if (upload.size > 5 * 1024 * 1024) throw new Error("L’image ne doit pas dépasser 5 Mo.");
+    if (upload.size > 4 * 1024 * 1024) throw new Error("L’image ne doit pas dépasser 4 Mo.");
 
     const buffer = Buffer.from(await upload.arrayBuffer());
     const validSignature =
@@ -1563,12 +1550,8 @@ export async function createMediaAction(formData: FormData) {
       (upload.type === "image/webp" && buffer.toString("ascii", 0, 4) === "RIFF" && buffer.toString("ascii", 8, 12) === "WEBP");
     if (!validSignature) throw new Error("Le fichier n’est pas une image valide de ce format.");
 
-    const uploadDirectory = join(process.cwd(), "public", "uploads");
-    await mkdir(uploadDirectory, { recursive: true });
-    const filename = `${randomUUID()}.${extension}`;
-    uploadedFilePath = join(uploadDirectory, filename);
-    await writeFile(uploadedFilePath, buffer, { flag: "wx" });
-    url = `/uploads/${filename}`;
+    uploadedImage = await storeImage(buffer, extension, upload.type);
+    url = uploadedImage.url;
   }
   if (!url) throw new Error("Choisissez une image ou indiquez son URL.");
   if (!url.startsWith("/uploads/")) {
@@ -1591,16 +1574,16 @@ export async function createMediaAction(formData: FormData) {
     });
   } catch (error) {
     const cleanupErrors: unknown[] = [];
-    if (uploadedFilePath) {
+    if (uploadedImage) {
       try {
-        await unlink(uploadedFilePath);
+        await uploadedImage.remove();
       } catch (cleanupError) {
         cleanupErrors.push(cleanupError);
       }
     }
     if (uploadedPreview) {
       try {
-        await unlink(uploadedPreview.filePath);
+        await uploadedPreview.remove();
       } catch (cleanupError) {
         cleanupErrors.push(cleanupError);
       }
@@ -1716,19 +1699,9 @@ export async function deleteMediaAction(formData: FormData) {
   if (activeSiteImage) {
     throw new Error("Cette image est utilisée par le site. Remplacez-la dans Personnalisation avant de la supprimer.");
   }
-  let uploadedFilePath: string | undefined;
-  if (media.url.startsWith("/uploads/")) {
-    const filename = basename(media.url);
-    if (filename !== media.url.slice("/uploads/".length)) {
-      throw new Error("Le chemin du média est invalide.");
-    }
-    uploadedFilePath = join(process.cwd(), "public", "uploads", filename);
-  }
   await prisma.media.delete({ where: { id } });
-  if (uploadedFilePath) {
-    await unlink(uploadedFilePath).catch((error: NodeJS.ErrnoException) => {
-      if (error.code !== "ENOENT") throw error;
-    });
+  if (isStoredImageUrl(media.url)) {
+    await deleteStoredImage(media.url);
   }
   await removeUnusedContentImage(media.previewImage);
   await recordUserActivity(

@@ -1,11 +1,12 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  allowedDevOrigins: ["192.168.1.4", "192.168.1.7", "192.168.1.8", "192.168.1.12", "192.168.1.27"],
+  allowedDevOrigins: ["192.168.1.4", "192.168.1.7", "192.168.1.8", "192.168.1.12", "192.168.1.27", "192.168.1.38"],
   experimental: {
     agentFeedback: true,
     serverActions: {
-      bodySizeLimit: "6mb",
+      // Vercel limite le corps des requêtes à 4,5 Mo : garder une marge sous cette limite.
+      bodySizeLimit: "4mb",
     },
   },
   cacheComponents: true,

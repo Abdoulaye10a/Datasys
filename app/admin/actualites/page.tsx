@@ -58,7 +58,7 @@ export default async function AdminArticlesPage({
             <fieldset className="admin-form-section">
               <legend><span className="admin-form-step">2</span> Images</legend>
               <label>Image de couverture<input name="imageFile" type="file" accept="image/jpeg,image/png,image/webp" /></label>
-              <small className="field-hint">JPEG, PNG ou WebP, 5 Mo maximum.{articleToEdit?.image ? " L’image actuelle sera conservée si vous n’en choisissez pas une autre." : ""}</small>
+              <small className="field-hint">JPEG, PNG ou WebP, 4 Mo maximum.{articleToEdit?.image ? " L’image actuelle sera conservée si vous n’en choisissez pas une autre." : ""}</small>
               {articleToEdit?.image && <label className="image-remove-option"><input type="checkbox" name="removeImage" /> Supprimer l’image actuelle</label>}
             </fieldset>
 

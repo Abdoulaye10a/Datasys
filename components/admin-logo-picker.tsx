@@ -66,7 +66,7 @@ export function AdminLogoPicker({
             setSelectedFile(file);
           }}
         />
-        <small className="field-hint">JPEG, PNG ou WebP · 5 Mo maximum.</small>
+        <small className="field-hint">JPEG, PNG ou WebP · 4 Mo maximum.</small>
       </label>
       <fieldset className="logo-choice-fieldset">
         <legend>Choisissez une version du logo</legend>
