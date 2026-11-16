@@ -1,0 +1,236 @@
+generator client {
+  provider = "prisma-client"
+  output   = "./generated/client"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum UserRole {
+  ADMIN
+  EDITOR
+}
+
+enum ContentStatus {
+  DRAFT
+  PUBLISHED
+}
+
+enum ActivityStatus {
+  UPCOMING
+  ONGOING
+  COMPLETED
+}
+
+enum PublicationType {
+  ARTICLE
+  ACTIVITY
+  ANNOUNCEMENT
+  PROJECT
+  MEDIA
+}
+
+enum MessageReplyStatus {
+  PENDING
+  SENT
+  FAILED
+}
+
+model User {
+  id             String         @id @default(cuid())
+  name           String
+  email          String         @unique
+  passwordHash   String
+  role           UserRole       @default(EDITOR)
+  isBlocked      Boolean        @default(false)
+  articles       Article[]
+  activities     Activity[]
+  announcements  Announcement[]
+  projects       Project[]
+  media          Media[]
+  messageReplies MessageReply[]
+  userActivities UserActivity[]
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+}
+
+model Category {
+  id        String    @id @default(cuid())
+  name      String    @unique
+  slug      String    @unique
+  articles  Article[]
+  createdAt DateTime  @default(now())
+}
+
+model Article {
+  id           String        @id @default(cuid())
+  title        String
+  slug         String        @unique
+  excerpt      String
+  content      String
+  linkHref     String?
+  linkLabel    String?
+  image        String?
+  previewImage String?
+  status       ContentStatus @default(DRAFT)
+  publishedAt  DateTime?
+  authorId     String
+  categoryId   String?
+  author       User          @relation(fields: [authorId], references: [id], onDelete: Restrict)
+  category     Category?     @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  @@index([status, publishedAt])
+  @@index([categoryId])
+}
+
+model Activity {
+  id                String         @id @default(cuid())
+  title             String
+  slug              String         @unique
+  description       String
+  startDate         DateTime
+  endDate           DateTime?
+  location          String
+  linkHref          String?
+  linkLabel         String?
+  image             String?
+  previewImage      String?
+  status            ActivityStatus @default(UPCOMING)
+  publicationStatus ContentStatus  @default(DRAFT)
+  authorId          String
+  author            User           @relation(fields: [authorId], references: [id], onDelete: Restrict)
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+
+  @@index([publicationStatus, status, startDate])
+}
+
+model Announcement {
+  id           String        @id @default(cuid())
+  title        String
+  slug         String        @unique
+  excerpt      String?
+  content      String
+  linkHref     String?
+  linkLabel    String?
+  image        String?
+  previewImage String?
+  status       ContentStatus @default(DRAFT)
+  publishedAt  DateTime?
+  expiresAt    DateTime?
+  authorId     String
+  author       User          @relation(fields: [authorId], references: [id], onDelete: Restrict)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  @@index([status, publishedAt, expiresAt])
+}
+
+model Project {
+  id               String        @id @default(cuid())
+  title            String
+  slug             String        @unique
+  excerpt          String
+  description      String
+  category         String?
+  audience         String?
+  firstGroupTitle  String?
+  firstGroupItems  String?
+  secondGroupTitle String?
+  secondGroupItems String?
+  linkHref         String?
+  linkLabel        String?
+  projectDate      DateTime?
+  image            String?
+  previewImage     String?
+  status           ContentStatus @default(DRAFT)
+  publishedAt      DateTime?
+  authorId         String
+  author           User          @relation(fields: [authorId], references: [id], onDelete: Restrict)
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+
+  @@index([status, publishedAt])
+}
+
+model Media {
+  id           String   @id @default(cuid())
+  url          String
+  previewImage String?
+  type         String
+  altText      String?
+  uploadedById String
+  uploadedBy   User     @relation(fields: [uploadedById], references: [id], onDelete: Restrict)
+  createdAt    DateTime @default(now())
+}
+
+model Message {
+  id        String         @id @default(cuid())
+  name      String
+  email     String
+  subject   String
+  message   String
+  readAt    DateTime?
+  createdAt DateTime       @default(now())
+  replies   MessageReply[]
+
+  @@index([readAt, createdAt])
+}
+
+model MessageReply {
+  id          String             @id @default(cuid())
+  messageId   String
+  senderId    String
+  senderName  String
+  senderEmail String
+  subject     String
+  body        String
+  status      MessageReplyStatus @default(PENDING)
+  createdAt   DateTime           @default(now())
+  message     Message            @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  sender      User               @relation(fields: [senderId], references: [id], onDelete: Restrict)
+
+  @@index([messageId, createdAt])
+}
+
+model Setting {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
+}
+
+model LoginAttempt {
+  id        String   @id @default(cuid())
+  email     String
+  createdAt DateTime @default(now())
+
+  @@index([email, createdAt])
+}
+
+model PublicationView {
+  id              String          @id @default(cuid())
+  publicationType PublicationType
+  publicationId   String
+  visitorId       String
+  createdAt       DateTime        @default(now())
+
+  @@unique([publicationType, publicationId, visitorId])
+  @@index([publicationType, publicationId])
+}
+
+model UserActivity {
+  id         String   @id @default(cuid())
+  actorId    String?
+  actorName  String
+  actorEmail String
+  action     String
+  details    String
+  createdAt  DateTime @default(now())
+  actor      User?    @relation(fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([createdAt])
+  @@index([actorId, createdAt])
+}
